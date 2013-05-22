@@ -1,26 +1,3 @@
-//============================================================================
-// Name        : HtCreateNewPosition.java
-// Author      : John-David "JD" Wuarin
-// Copyright (c) tradable ApS.
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense,
-// and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-//
-//============================================================================
-
 /*************************************************************************************
  * This program is to be used as a learning tool and as a basis for creating
  * bigger more elaborate tradable apps. The use of the different tradable APIs is 
@@ -79,13 +56,7 @@ import com.tradable.api.services.account.CurrentAccountService;
 //====================================================================================
 import com.tradable.api.entities.Instrument;
 import com.tradable.api.services.instrument.InstrumentService;
-import com.tradable.api.services.instrument.InstrumentServiceListener;
-import com.tradable.api.services.instrument.InstrumentUpdateEvent;
-import com.tradable.api.services.marketdata.Quote;
-import com.tradable.api.services.marketdata.QuoteTickEvent;
-import com.tradable.api.services.marketdata.QuoteTickListener;
 import com.tradable.api.services.marketdata.QuoteTickService;
-import com.tradable.api.services.marketdata.QuoteTickSubscription;
 import com.tradable.api.services.preferences.PreferenceKey;
 import com.tradable.api.services.preferences.PreferenceListener;
 import com.tradable.api.services.preferences.PreferenceService;

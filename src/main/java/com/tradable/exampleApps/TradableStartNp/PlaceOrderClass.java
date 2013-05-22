@@ -148,7 +148,7 @@ public class PlaceOrderClass implements TradingRequestListener{
 	
 	public void OCOOrder(Position oCOPosition, Double stopLossPrice, Double takeProfitPrice){
 			
-		CreateOCOGroupRequestBuilder OCOBuilder = new CreateOCOGroupRequestBuilder();
+		CreateOCOGroupRequestBuilder oCOBuilder = new CreateOCOGroupRequestBuilder();
 
 		if (oCOPosition == null) {return;}
 		
@@ -160,13 +160,13 @@ public class PlaceOrderClass implements TradingRequestListener{
 		//setTakeProfit sets the price for the LIMIT order. Our
 		//limit order is set slightly higher than the current price so 
 		//that we would actually take a profit is the price was hit.
-		OCOBuilder.setPosition(oCOPosition);
-		OCOBuilder.setQuantity(3000.0);
-		OCOBuilder.setRequestId(++commandIdSeed);
-		OCOBuilder.setStopLoss(stopLossPrice, OrderSide.SELL);
-		OCOBuilder.setTakeProfit(takeProfitPrice);
+		oCOBuilder.setPosition(oCOPosition);
+		oCOBuilder.setQuantity(3000.0);
+		oCOBuilder.setRequestId(++commandIdSeed);
+		oCOBuilder.setStopLoss(stopLossPrice, OrderSide.SELL);
+		oCOBuilder.setTakeProfit(takeProfitPrice);
 
-		OrderGroupRequest orderGroupRequest = OCOBuilder.build();
+		OrderGroupRequest orderGroupRequest = oCOBuilder.build();
 		
 		
 	    logger.info("Executing command: {}", commandIdSeed);
