@@ -267,7 +267,7 @@ public class TradableStartNpModule extends JPanel implements WorkspaceModule, Ac
 					
 					if (clickRound == 1){
 						placeOrderObject.placeOrder(dataObject.getCurrentInstrument(), 
-								OrderSide.SELL, OrderDuration.DAY, OrderType.MARKET, 2000.0);
+								OrderSide.SELL, OrderDuration.DAY, OrderType.MARKET, 2000000000.0);
 						
 						int something = 2;
 						int none = something;

@@ -41,6 +41,7 @@ QuoteTickListener{
 		this.instrumentService = instrumentService;
 		this.quoteTickService = quoteTickService;
 		this.bidTextField = bidTextField;
+		this.askTextField = askTextField;
 		
 		
 		//We note, for the QuoteTickService interface, the only available method to its objects
