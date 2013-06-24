@@ -21,17 +21,17 @@ public class AccountRelatedClass implements CurrentAccountServiceListener {
 
 	//========================================(1)========================================//
 	//Declaring CurrentAccountService object and Account object. The CurrentAccountService
-	//object will be set in the constructor (from our factory). We declare it here too, in
-	//order for it to be accessible in other methods and not just the constructor. We also
-	//declare an Account object which will be set whenever the account is reset. Such an
-	//event is said to occur whenever the Module starts up and whenever the user selects
-	//a different account to use. The accountId value is found once the Account object
-	//is instantiated. This also happens whenever the Account is reset, i.e. in this
-	//case, when a new Module's instantiation is open. The accountId is used for passing
-	//orders.
+	//object has been instantiated in our factory. We declare it here too, in
+	//order for it to be accessible in other methods of the AccountRelatedClass and not just the constructor.
+	//We also declare an Account object which will be set whenever the accountUpdated method
+	//is called by the container. Such events occur whenever the accounts listens onto 
+	//any change in the account (may it be Orders, Positions Trades, or simply if the account was switched).
+	//Upon instantiation the account object is set to the account that instantiated the apps Module.
+	//The accountId value is found subsequently but has to be changed if an event set to accountUpdated
+	//was a reset event i.e. the account was switched. The accountId is used for passing orders
 	//==================================================================================
 	
-	private CurrentAccountService accountSubscriptionService;
+	private CurrentAccountService currentAccountService;
 	private Account currentAccount;
 	private int accountId;
 	
@@ -44,16 +44,16 @@ public class AccountRelatedClass implements CurrentAccountServiceListener {
 		//the "this" object is a CurrentAccountServiceListener object too, so we can add listeners 
 		//this way. We also set the accountService object to the one Autowired in the factory 
 		
-		this.accountSubscriptionService = accountSubscriptionService;
-		this.accountSubscriptionService.addListener(this);
-		currentAccount = accountSubscriptionService.getCurrentAccount();
-		accountId = currentAccount.getAccountId();
+		this.currentAccountService = accountSubscriptionService;
+		this.currentAccountService.addListener(this);
+//		currentAccount = accountSubscriptionService.getCurrentAccount();
+//		accountId = currentAccount.getAccountId();
 		
 	}
 	
 	public void destroy() {
 		
-		accountSubscriptionService.removeListener(this);
+		currentAccountService.removeListener(this);
 
 	}
 	
@@ -69,12 +69,10 @@ public class AccountRelatedClass implements CurrentAccountServiceListener {
 	
 	
 	//========================================(1)========================================//
-	//Upon instantiation, the account will detect by default that it is reset. So isReet
-	//will return true. We therefore get the value for our currAccount Account object and
-	//from there our accountId which will be used to pass orders.
-	//We also recall that CurrentAccountServiceListener fires up an event whenever
-	//an order is placed, a trade takes place, and or a position changes. This method
-	//thus includes code that simply writes down whatever it sees happening in the textPane.
+	//We recall that CurrentAccountServiceListener fires up an event whenever
+	//an order is placed, a trade takes place, a position changed or if the account is switched. 
+	//This method, on top of switching the accountId object when account is switched thus
+	//also includes code that simply writes down whatever it sees happening in the textPane.
 	//We note that currentAccount is set on every event, as this is currently the only way
 	//to always have the latest information in the currentAccount object.
 	//====================================================================================	
@@ -83,10 +81,10 @@ public class AccountRelatedClass implements CurrentAccountServiceListener {
 	@Override
     public void accountUpdated(AccountUpdateEvent event) {
 	
-		currentAccount = accountSubscriptionService.getCurrentAccount();
+		currentAccount = currentAccountService.getCurrentAccount();
         if (event.isReset()) {
+        	
     		accountId = currentAccount.getAccountId();
-
         } 
         else {
         	
@@ -251,7 +249,21 @@ public class AccountRelatedClass implements CurrentAccountServiceListener {
     //====================================================================================
     //====================================================================================	
 	
+	public Order getOrder(String clientOrderId){
+		List<Order> accountOrders = currentAccount.getOrders();
+		Order searchedForOrder = null;
+		for (Order order : accountOrders){
+			if (order.getClientOrderId().equals(clientOrderId)){
+				searchedForOrder = order;
+			}
+		}
+		
+		return searchedForOrder;
+	}
 	
+	
+	//this mehotd is not currently used in the current iteratin of the example, 
+	//but it might still be of used for some people.
 	public List<Order> getWorkingOrdersList(){
 
 		//to get the list of all working orders, I.e. orders that i can actually modify. 
@@ -267,5 +279,6 @@ public class AccountRelatedClass implements CurrentAccountServiceListener {
 		else
 			return null;
 	}
+	
 
 }

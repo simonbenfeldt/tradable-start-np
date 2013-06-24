@@ -15,12 +15,12 @@ instrument and a small output window. When clicked, the button passes hard-coded
 * The second click sends a short market order that should be filled immediately
 * The third click will send a long limit order that shouldn't be filled (at 85% of the latest ask price)
 * The fourth click will change that unfilled working order and send a new long limit order for a different amount which should be filled as it is slightly above the ask price (101% of ask price)
-* The fifth click will Set an OCO order on the open position. Currently as the client order 
-Id is not yet supported, it does so by detecting the open position which is of the expected instrument and size.
-This fifth click will also take you back to the first click and so on.
+* The fifth click will Set an OCO order on an open position on the selected instrument.
 * You can monitor the latest quotes for the selected instrument right below the button in the 2 text fields. 
 Furthermore, you can monitor the execution of your orders in the window right below those fields.
 
 
 If you want to get started with tradable Apps using this project as a base for your code, go check out the 
 REAMDE included in the tradable project to see how to open the project in Eclipse.
+
+!!! this code will only run on version 31 and above of the platform and above.

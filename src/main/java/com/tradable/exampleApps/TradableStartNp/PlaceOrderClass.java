@@ -76,12 +76,12 @@ public class PlaceOrderClass implements TradingRequestListener{
 
 	
 	public void placeOrder(Instrument instrument, OrderSide orderSide, OrderDuration orderDuration, 
-			OrderType orderType, Double quantity){
-		placeOrder(instrument, orderSide, orderDuration, orderType, quantity, 0.0);
+			OrderType orderType, Double quantity, String clientOrderIdToSend){
+		placeOrder(instrument, orderSide, orderDuration, orderType, quantity, clientOrderIdToSend, 0.0);
 	}
 	
 	public void placeOrder(Instrument instrument, OrderSide orderSide, OrderDuration orderDuration, 
-			OrderType orderType, Double quantity, Double limit) {
+			OrderType orderType, Double quantity, String clientOrderIdToSend, Double limit) {
 		
 		PlaceOrderActionBuilder orderActionBuilder = new PlaceOrderActionBuilder();
 		orderActionBuilder.setInstrument(instrument); // instrument object set in constructor
@@ -98,19 +98,20 @@ public class PlaceOrderClass implements TradingRequestListener{
 		
 
 		orderActionBuilder.setQuantity(quantity);
+		orderActionBuilder.setClientOrderId(clientOrderIdToSend);
 		PlaceOrderAction orderAction = orderActionBuilder.build();
 		
 		OrderActionRequest request = new OrderActionRequest(accountId, orderAction); 
 		
 
-		logger.info("Executing command: {}", ++commandIdSeed);
+		logger.info("Executing order command: {}", clientOrderIdToSend);
 
 		try {
 			executor.execute(request, this);
 		} 
 		
 		catch (Exception ex) {
-			logger.error("Failed to submit command: {}", commandIdSeed, ex);
+			logger.error("Failed to submit command: {}", clientOrderIdToSend, ex);
 		}	
 	}	
 	
@@ -121,8 +122,7 @@ public class PlaceOrderClass implements TradingRequestListener{
 	//time when the market is open.
 	//==================================================================================//
 	public void modifyOrder(Order orderToModify, OrderDuration orderDuration, Double quantity, 
-			Double limitPrice){
-		
+			String clientOrderIdToEdit, Double limitPrice){
 		
 		ModifyOrderActionBuilder orderActionBuilder = new ModifyOrderActionBuilder(orderToModify);
 		orderActionBuilder.setOrderType(OrderType.LIMIT);
@@ -134,36 +134,29 @@ public class PlaceOrderClass implements TradingRequestListener{
 
 	    OrderActionRequest modRequest = new OrderActionRequest(accountId, modOrderAction);
 		
-	    logger.info("Executing command: {}", ++commandIdSeed);
+	    logger.info("Executing modifying order command: {}", clientOrderIdToEdit);
 
 	    try {
 	    	executor.execute(modRequest, this);
 	    } 
 	    catch (RuntimeException  ex) {
-	    	logger.error("Failed to submit command: {}", commandIdSeed, ex);
+	    	logger.error("Failed to submit command: {}", clientOrderIdToEdit, ex);
 	    }
 		
 	}
 	
 	
-	public void OCOOrder(Position oCOPosition, Double stopLossPrice, Double takeProfitPrice){
+	public void OCOOrder(Position oCOPosition, OrderSide orderSide, Double stopLossPrice, Double takeProfitPrice){
 			
 		CreateOCOGroupRequestBuilder oCOBuilder = new CreateOCOGroupRequestBuilder();
 
 		if (oCOPosition == null) {return;}
 		
-		//We then have to set the position to the builder.
-		//Quantity is set to 3000 too. Could be different.
-		//setStopLoss sets the price we want to set our stop loss to.
-		//This sets the price of the STOP order. We also specify here 
-		//that this is a SELL order (as we are long 3000 EURUSD)
-		//setTakeProfit sets the price for the LIMIT order. Our
-		//limit order is set slightly higher than the current price so 
-		//that we would actually take a profit is the price was hit.
+
 		oCOBuilder.setPosition(oCOPosition);
-		oCOBuilder.setQuantity(3000.0);
+		oCOBuilder.setQuantity(Math.abs(oCOPosition.getQuantity()));
 		oCOBuilder.setRequestId(++commandIdSeed);
-		oCOBuilder.setStopLoss(stopLossPrice, OrderSide.SELL);
+		oCOBuilder.setStopLoss(stopLossPrice, orderSide);
 		oCOBuilder.setTakeProfit(takeProfitPrice);
 
 		OrderGroupRequest orderGroupRequest = oCOBuilder.build();

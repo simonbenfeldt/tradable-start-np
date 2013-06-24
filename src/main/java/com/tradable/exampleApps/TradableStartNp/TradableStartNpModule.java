@@ -88,6 +88,8 @@ public class TradableStartNpModule extends JPanel implements WorkspaceModule, Ac
 	//This is used if your class uses the Persistable interfaces. 
 	//====================================================================================
 	private static final long serialVersionUID = 8426444465622687177L;
+	//Logger is used to write output to the tradable log file . In this example we use it
+	//when we send out orders.
 	private static final Logger logger = LoggerFactory.getLogger(TradableStartNpModule.class);	
 	private static final String TITLE = "Rename me";
 
@@ -100,6 +102,10 @@ public class TradableStartNpModule extends JPanel implements WorkspaceModule, Ac
 	//==================================================================================	
 	
 	private PlaceOrderClass placeOrderObject;
+	private String clientOrderIdToSend;
+	private String clientOrderIdToEdit;
+	private String moduleId;
+	private int orderNbr = 0; //used to build the client order Id
 	
 	private PreferenceService preferenceService;
 	private Boolean oneClickEnabled = null;
@@ -117,7 +123,7 @@ public class TradableStartNpModule extends JPanel implements WorkspaceModule, Ac
 	public TradableStartNpModule(TradingRequestExecutor executor, 
 			CurrentAccountService accountSubscriptionService, 
 			InstrumentService instrumentService, QuoteTickService quoteTickService,
-			PreferenceService preferenceService) {
+			PreferenceService preferenceService, String moduleId) {
 			
 		
 		//============= This code sets up the visual component of our Module==============//
@@ -162,28 +168,30 @@ public class TradableStartNpModule extends JPanel implements WorkspaceModule, Ac
 		
 		//setting all the values for used objects.
 
-		dataObject = new InstrumentAndMarketData(instrumentService, quoteTickService, 
-			bidTextField, askTextField);
-		accountRelatedObject = new AccountRelatedClass(accountSubscriptionService, textPane);
-		placeOrderObject = new PlaceOrderClass(executor, logger);
-		this.preferenceService = preferenceService;
 		//========================================(1)========================================//
 		//
-		//====================================================================================	
+		accountRelatedObject = new AccountRelatedClass(accountSubscriptionService, textPane);
 		
 		//========================================(2)========================================//
 		//
-		//====================================================================================	
-		
+		dataObject = new InstrumentAndMarketData(instrumentService, quoteTickService, 
+			bidTextField, askTextField);
 
         //========================================(3)========================================//
-		placeOrderObject.setAccountId(accountRelatedObject.getAccountId());
+		placeOrderObject = new PlaceOrderClass(executor, logger);
+		this.preferenceService = preferenceService;
+
+
+		//placeOrderObject.setAccountId(accountRelatedObject.getAccountId());
+		//====================================================================================	
+		
 		this.preferenceService.addPreferenceListener(PreferenceKey.ONE_CLICK_TRADING_ENABLED, this);
 		this.preferenceService.addPreferenceListener(PreferenceKey.MULTIPLE_TRACKS_ENABLED, this);
 		oneClickEnabled = this.preferenceService.isOneClickTradingEnabled();
 		mulTracksEnabled = this.preferenceService.isMultipleTracksEnabled();
 		confirmedOrder = false;
         
+		this.moduleId = moduleId;
 		clickRound = 0;
 		
 	}	
@@ -193,31 +201,31 @@ public class TradableStartNpModule extends JPanel implements WorkspaceModule, Ac
 	//========================================(3)========================================//
 	//We have a set of different methods and implementations. Our first method listens for
     //actions performed by the user. In this event, an event will be fired any time the
-    //user clicks the button. THe method was set up so that 
+    //user clicks the button. The method was set up so that 
     //
     //actionPerformed(..):
     //
     //1). On The first click will set randomly the instrument to use amongst the Collection
     //of instruments that was returned using the getInstruments(String Symbol) method.
     //This is meant to show how the Collection might be used to search through it and
-    //find instruments. Then, the QuoteTickSubscription is set to the symbol of the 
+    //find instruments. Then, the currentInstrument variable of the dataObject is set to the symbol of the 
 	//instrument in question and the latest bid and ask prices are printed in the
 	//appropriate fields. If an exception occurs (due to the randomly chosen symbol),
 	//the next click will find another instrument and try printing its values too.
     //2). On the second click, the user
-    //places a good till cancelled market order for 2'000. When the market is open, this 
-    //order should be filled almost instantly and the program will print the order, trade
-    //and position information out accordingly.
-    //3). On the third click, the user will try placing a limit order for 1'000.
+    //places a market order for 2 * minimum order size of instrument in question. 
+	//When the market is open, this order should be filled almost instantly 
+	//and the program will print the order, trade and position information out accordingly.
+    //3). On the third click, the user will try placing a limit order for the minimum order size of the instrument.
     //The limit is set so that the order will never be filled and it will remain pending
-    //or in "working" state. 
-    //4). On the fourth click, the user changes the last pending order he placed and 
-    //now places a limit order for 2'000 that should be filled instantly as the set limit 
-    //is slightly higher than the latest found ask price. We note that on the fourth click, 
-    //the App gets a list of all working methods using the getWorkingOrdersList() method which is 
-    //defined here which quite simply returns a list of working orders. Once it has the list of 
-    //working orders, it selects the one to modify by checking both the instrument it uses and the 
-	//Quantity ordered.
+    //or in "working" state. As we know we will want to change it, the clientOrderIdToEdit
+	//object is set to the clientOrderIdToSend we set at this click.
+    //4). On the fourth click, the user changes the last pending order using the clientOrderIdToEdit objec.
+	//The user changes it to a limit order for 5 * minimum order size of instrument that should be filled instantly as the set limit 
+    //is slightly higher than the latest observed ask price. 
+	//5) We show how to protect position using the OCOGroupRequestBuilder. We arbitrarily 
+	//select a position in the same instrument we used to protect it by placing a protectin
+	//limit order and a take profit.
 	//When clicked again, go to 1).
 	//====================================================================================	
 	
@@ -254,6 +262,8 @@ public class TradableStartNpModule extends JPanel implements WorkspaceModule, Ac
 							"Click again to get prices for another symbol\n\n" , null);
 					
 					e.printStackTrace();
+					
+					placeOrderObject.setAccountId(accountRelatedObject.getAccountId());
 					return; //clickRound not incremented.
 				}
 				
@@ -265,37 +275,38 @@ public class TradableStartNpModule extends JPanel implements WorkspaceModule, Ac
 				
 				if(oneClickEnabled || confirmedOrder){
 					
+					++orderNbr;
+					
 					if (clickRound == 1){
+						
+						clientOrderIdToSend = moduleId + Integer.toString(orderNbr);
 						placeOrderObject.placeOrder(dataObject.getCurrentInstrument(), 
-								OrderSide.SELL, OrderDuration.DAY, OrderType.MARKET, 2000.0);
+								OrderSide.SELL, OrderDuration.DAY, OrderType.MARKET, 
+								2 * dataObject.getCurrentInstrument().getMinOrderSize(),
+								clientOrderIdToSend);
 						
 					}
 					
 					else if (clickRound == 2){
+						clientOrderIdToSend = moduleId + Integer.toString(orderNbr);
+						clientOrderIdToEdit = clientOrderIdToSend;
 						//setting the limit price at a value that will not be filled (15 % below the current asking price)
 						placeOrderObject.placeOrder(dataObject.getCurrentInstrument(), OrderSide.BUY, 
-								OrderDuration.DAY, OrderType.LIMIT, 1000.0, 0.85*dataObject.getCurrentAsk().getPrice());
+								OrderDuration.DAY, OrderType.LIMIT, dataObject.getCurrentInstrument().getMinOrderSize(), 
+								clientOrderIdToSend, 0.85*dataObject.getCurrentAsk().getPrice());
 
 					}
 					
 					else if (clickRound == 3){
-			    		List<Order> workingOrders = accountRelatedObject.getWorkingOrdersList();
 			    		Order orderToModify = null;
-			    		if (workingOrders == null){
-			    			return; //there was an error, the order could not be found.
-			    		}
-			    		else{
-			    			for(Order order : workingOrders){
-			    				
-			    				if((order.getInstrument().getSymbol().equals(dataObject.getCurrentInstrument().getSymbol())) 
-			    						&& (order.getQuantity() == 1000.0))
-			    					orderToModify = order;
-			    				
-			    			}
-			    		}
 
-			    		placeOrderObject.modifyOrder(orderToModify, OrderDuration.DAY, 5000.0, 
-			    				1.01* dataObject.getCurrentAsk().getPrice());
+			    		orderToModify = accountRelatedObject.getOrder(clientOrderIdToEdit);
+			    		
+			    		//when I modify an order, the clientOrderId used will be the same however,
+			    		//we pass it on to the method in order to be able to log what we do.
+			    		placeOrderObject.modifyOrder(orderToModify, OrderDuration.DAY,
+			    				5 * dataObject.getCurrentInstrument().getMinOrderSize(), 
+			    				clientOrderIdToEdit, 1.01* dataObject.getCurrentAsk().getPrice());
 			    		
 						textPane.getDocument().insertString(textPane.getCaretPosition() , 
 								"Order is being modified \n\n" , null);		
@@ -305,20 +316,28 @@ public class TradableStartNpModule extends JPanel implements WorkspaceModule, Ac
 					else{
 						
 						//find a position you want to set an OCO order to.
-						//This code assumes a position long 3000 EURUSD was taken
-						//the current account. The position object is found that way
+						//This code arbitrarily chooses any position on the instrument we have used 
+						//for the OCO order. 
 						Position oCOPosition = null;
 						List<Position> positions = accountRelatedObject.getCurrentAccount().getPositions();
 						for (Position pos : positions){
-							if (pos.getInstrument().getSymbol().equals(dataObject.getCurrentInstrument().getSymbol())
-									&& (pos.getQuantity() == 3000.0)){
+							if (pos.getInstrument().getSymbol().equals(dataObject.getCurrentInstrument().getSymbol())){
 								oCOPosition = pos;
+								break;
 							}
 							
 						}
 						
-						placeOrderObject.OCOOrder(oCOPosition, 0.98 * dataObject.getCurrentBid().getPrice(), 
-								1.02 * dataObject.getCurrentAsk().getPrice());
+						if (oCOPosition.getQuantity() > 0){
+							placeOrderObject.OCOOrder(oCOPosition, OrderSide.SELL, 0.98 * dataObject.getCurrentBid().getPrice(), 
+									1.02 * dataObject.getCurrentAsk().getPrice());
+						}
+						else{
+							placeOrderObject.OCOOrder(oCOPosition, OrderSide.SELL, 1.02 * dataObject.getCurrentBid().getPrice(), 
+									0.98 * dataObject.getCurrentAsk().getPrice());
+						}
+						
+						
 						clickRound = 0;
 						this.btnNewButton.setText("Click Me " + String.valueOf(clickRound));
 						return;

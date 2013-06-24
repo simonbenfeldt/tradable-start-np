@@ -98,8 +98,8 @@ QuoteTickListener{
 	
 	//========================================(2)========================================//
 	//Remember that instrument events occur only when the user switches session accounts
-	//or when the list is changed. This will almost never happen while you are running this
-	//example, so no need to implement this method.
+	//or when the list is changed. Assuming you don't change accounts while running
+	// the example, this shouldn't happen. So no need to implement this method here.
 	//====================================================================================	
 	
     @Override

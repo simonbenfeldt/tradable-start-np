@@ -51,13 +51,13 @@ public class TradableStartNpFactory implements WorkspaceModuleFactory{
 	//The container or "application context" injects an instance of CurrentAccountService 
 	//We note that there is no need to use the new qualifier as spring takes care of this 
 	//for us. This notation only works by placing an instance of the CurrentAccountService
-	//bean into the HtCreateNewPositionFactory bean. The @Autowired notation only works
-	//if both interfaces/classes are beans. This means that the all the services we use
+	//bean into the TradableStartNpFactory bean. The @Autowired notation only works
+	//if both interfaces/classes are beans. This means that all the services we use
 	//here have been defined in the tradable API as being beens. Of course, the 
-	//HtCreateNewPositionFactory class is also a been as we specify it in app-context.xml
+	//TradableStartNpFactory class is also a been as we specify it in app-context.xml
 	//====================================================================================
 	@Autowired
-	CurrentAccountService accountSubscriptionService;
+	CurrentAccountService currentAccountService;
 	
 	
 	//========= (2) InstrumentService object has to be instantiated here.==========//
@@ -76,7 +76,7 @@ public class TradableStartNpFactory implements WorkspaceModuleFactory{
 	
 	
 	//========= (3) TradingRequestExecutor object has to be instantiated here.==========//
-	//The TradingRequestExecutor is also a bean and is the equivalent of ou services when
+	//The TradingRequestExecutor is also a bean and is the equivalent of our services when
 	//it comes to executing stuff rather than listening for stuff to happen.
 	//====================================================================================
 	@Autowired
@@ -87,15 +87,21 @@ public class TradableStartNpFactory implements WorkspaceModuleFactory{
 	@Autowired
 	private PreferenceService preferenceService;
 	
+	//this is used in order to make sure that the OrderId used in an order is a unique one.
+	public static int moduleNbr = 0;
+	private String moduleId;
 	
 	//== (0) just the 4 interfaces that have to be implemented as per our component API=//
 	//====================================================================================
 	
+	
 	@Override
 	public WorkspaceModule createModule() {
 
-		return new TradableStartNpModule(executor, accountSubscriptionService, 
-				instrumentService, quoteTickService, preferenceService);
+		++moduleNbr;
+		moduleId = "NP_" + Integer.toString(moduleNbr) + "_";
+		return new TradableStartNpModule(executor, currentAccountService, 
+				instrumentService, quoteTickService, preferenceService, moduleId);
 	}
 
 	@Override
