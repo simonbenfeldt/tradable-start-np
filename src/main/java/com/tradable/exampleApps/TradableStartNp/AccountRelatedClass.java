@@ -46,8 +46,8 @@ public class AccountRelatedClass implements CurrentAccountServiceListener {
 		
 		this.currentAccountService = accountSubscriptionService;
 		this.currentAccountService.addListener(this);
-//		currentAccount = accountSubscriptionService.getCurrentAccount();
-//		accountId = currentAccount.getAccountId();
+		currentAccount = accountSubscriptionService.getCurrentAccount();
+		accountId = currentAccount.getAccountId();
 		
 	}
 	
