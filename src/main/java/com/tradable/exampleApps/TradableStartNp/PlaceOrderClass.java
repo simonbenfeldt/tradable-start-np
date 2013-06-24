@@ -1,5 +1,7 @@
 package com.tradable.exampleApps.TradableStartNp;
 
+import javax.swing.JOptionPane;
+
 import org.slf4j.Logger;
 
 import com.tradable.api.entities.Instrument;
@@ -11,6 +13,8 @@ import com.tradable.api.entities.Position;
 import com.tradable.api.services.executor.ModifyOrderAction;
 import com.tradable.api.services.executor.ModifyOrderActionBuilder;
 import com.tradable.api.services.executor.OrderActionRequest;
+import com.tradable.api.services.executor.OrderActionResponse;
+import com.tradable.api.services.executor.OrderActionResult;
 import com.tradable.api.services.executor.PlaceOrderAction;
 import com.tradable.api.services.executor.PlaceOrderActionBuilder;
 import com.tradable.api.services.executor.TradingRequest;
@@ -101,7 +105,7 @@ public class PlaceOrderClass implements TradingRequestListener{
 		orderActionBuilder.setClientOrderId(clientOrderIdToSend);
 		PlaceOrderAction orderAction = orderActionBuilder.build();
 		
-		OrderActionRequest request = new OrderActionRequest(accountId, orderAction); 
+		OrderActionRequest request = new OrderActionRequest(++commandIdSeed, accountId, orderAction); 
 		
 
 		logger.info("Executing order command: {}", clientOrderIdToSend);
@@ -132,7 +136,7 @@ public class PlaceOrderClass implements TradingRequestListener{
 
 	    ModifyOrderAction modOrderAction = orderActionBuilder.build();
 
-	    OrderActionRequest modRequest = new OrderActionRequest(accountId, modOrderAction);
+	    OrderActionRequest modRequest = new OrderActionRequest(++commandIdSeed, accountId, modOrderAction);
 		
 	    logger.info("Executing modifying order command: {}", clientOrderIdToEdit);
 
@@ -175,11 +179,23 @@ public class PlaceOrderClass implements TradingRequestListener{
 
 	@Override
 	public void requestExecuted(TradingRequestExecutor executor, TradingRequest request, TradingResponse response) {
+	
 		if (response.isSuccess())
 			logger.info("Command is successfully executed: {}", request.getId());
 					
 		else 
-			logger.error("Command is failed to execute: {}", request.getId(), response.getCause());
+			logger.error("Command failed to execute: {}", request.getId(), response.getCause());
+		
+		for (OrderActionResult result : ((OrderActionResponse) response).getRejectedActions()){
+			if(!result.isSuccess()){
+				JOptionPane.showMessageDialog(null,
+						result.getCause().getMessage() + ", " + result.getCause().getCause().getMessage(),
+						"Order error",
+						JOptionPane.ERROR_MESSAGE);
+				logger.error("Could not execute order: {}", request.getId(), result.getCause().getMessage() + ", " + result.getCause().getCause().getMessage());
+			}
+		}
+
 		
 	}
 

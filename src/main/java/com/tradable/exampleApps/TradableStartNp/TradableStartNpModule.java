@@ -262,10 +262,10 @@ public class TradableStartNpModule extends JPanel implements WorkspaceModule, Ac
 							"Click again to get prices for another symbol\n\n" , null);
 					
 					e.printStackTrace();
-					
-					placeOrderObject.setAccountId(accountRelatedObject.getAccountId());
 					return; //clickRound not incremented.
 				}
+				
+				placeOrderObject.setAccountId(accountRelatedObject.getAccountId());
 				
 			}
 			
