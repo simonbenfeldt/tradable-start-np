@@ -37,24 +37,25 @@ public class AccountRelatedClass implements CurrentAccountServiceListener {
 	
 	private JTextPane textPane;
 	
-	public AccountRelatedClass(CurrentAccountService accountSubscriptionService, JTextPane textPane){
+	public AccountRelatedClass(CurrentAccountService currentAccountService, JTextPane textPane){
 		
 		this.textPane = textPane;
 		
 		//the "this" object is a CurrentAccountServiceListener object too, so we can add listeners 
 		//this way. We also set the accountService object to the one Autowired in the factory 
 		
-		this.currentAccountService = accountSubscriptionService;
+		this.currentAccountService = currentAccountService;
 		this.currentAccountService.addListener(this);
-		currentAccount = accountSubscriptionService.getCurrentAccount();
-		accountId = currentAccount.getAccountId();
+		
+		currentAccount = currentAccountService.getCurrentAccount();
+		if (currentAccount != null) 
+			//only set accountId if service was ready, else, wait for listener to do so.
+			accountId = currentAccount.getAccountId();
 		
 	}
 	
 	public void destroy() {
-		
 		currentAccountService.removeListener(this);
-
 	}
 	
 	
@@ -262,8 +263,8 @@ public class AccountRelatedClass implements CurrentAccountServiceListener {
 	}
 	
 	
-	//this mehotd is not currently used in the current iteratin of the example, 
-	//but it might still be of used for some people.
+	//this method is not used in the current iteration of the example, 
+	//but it might still be of use for some people.
 	public List<Order> getWorkingOrdersList(){
 
 		//to get the list of all working orders, I.e. orders that i can actually modify. 

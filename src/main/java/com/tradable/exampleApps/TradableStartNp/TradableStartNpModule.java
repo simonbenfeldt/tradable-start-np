@@ -210,10 +210,12 @@ public class TradableStartNpModule extends JPanel implements WorkspaceModule, Ac
     //This is meant to show how the Collection might be used to search through it and
     //find instruments. Then, the currentInstrument variable of the dataObject is set to the symbol of the 
 	//instrument in question and the latest bid and ask prices are printed in the
-	//appropriate fields. If an exception occurs (due to the randomly chosen symbol),
-	//the next click will find another instrument and try printing its values too.
-    //2). On the second click, the user
-    //places a market order for 2 * minimum order size of instrument in question. 
+	//appropriate fields.
+    //2). On the second click, If an exception occurs (due to the randomly chosen symbol),
+	//the next click will reset the click counter and find another instrument and 
+	//try printing its values too.
+	//If there was no exception, the user places a market order for 2 * minimum 
+	//order size of instrument in question. 
 	//When the market is open, this order should be filled almost instantly 
 	//and the program will print the order, trade and position information out accordingly.
     //3). On the third click, the user will try placing a limit order for the minimum order size of the instrument.
@@ -250,22 +252,6 @@ public class TradableStartNpModule extends JPanel implements WorkspaceModule, Ac
 
 				dataObject.setCurrentTickSubscriptionSymbol();
 				dataObject.setCurrentQuotes();
-	            
-				try {
-		            bidTextField.setText("currBid: " + String.valueOf(dataObject.getCurrentBid().getPrice()));	
-		            askTextField.setText("currAsk: " + String.valueOf(dataObject.getCurrentAsk().getPrice()));
-
-				} catch (NullPointerException e) {
-					textPane.getDocument().insertString(textPane.getCaretPosition() , 
-							"NullPointerException caught, symbol cannot be used at this time " +
-							"because prices aren't being updated fast enough!\n\n" + 
-							"Click again to get prices for another symbol\n\n" , null);
-					
-					e.printStackTrace();
-					return; //clickRound not incremented.
-				}
-				
-				placeOrderObject.setAccountId(accountRelatedObject.getAccountId());
 				
 			}
 			
@@ -276,8 +262,26 @@ public class TradableStartNpModule extends JPanel implements WorkspaceModule, Ac
 				if(oneClickEnabled || confirmedOrder){
 					
 					++orderNbr;
+					placeOrderObject.setAccountId(accountRelatedObject.getAccountId());
 					
 					if (clickRound == 1){
+						
+						try {
+				            bidTextField.setText("currBid: " + String.valueOf(dataObject.getCurrentBid().getPrice()));	
+				            askTextField.setText("currAsk: " + String.valueOf(dataObject.getCurrentAsk().getPrice()));
+
+						} catch (NullPointerException e) {
+							textPane.getDocument().insertString(textPane.getCaretPosition() , 
+									"NullPointerException caught, symbol cannot be used at this time " +
+									"because prices aren't being updated fast enough!\n\n" + 
+									"Click again to get prices for another symbol\n\n" , null);
+							
+							e.printStackTrace();
+							clickRound = 0;
+							this.btnNewButton.setText("Click Me " + String.valueOf(clickRound));
+							return; //cdon't send any order.
+						}
+						
 						
 						clientOrderIdToSend = moduleId + Integer.toString(orderNbr);
 						placeOrderObject.placeOrder(dataObject.getCurrentInstrument(), 
@@ -302,14 +306,22 @@ public class TradableStartNpModule extends JPanel implements WorkspaceModule, Ac
 
 			    		orderToModify = accountRelatedObject.getOrder(clientOrderIdToEdit);
 			    		
-			    		//when I modify an order, the clientOrderId used will be the same however,
-			    		//we pass it on to the method in order to be able to log what we do.
-			    		placeOrderObject.modifyOrder(orderToModify, OrderDuration.DAY,
-			    				5 * dataObject.getCurrentInstrument().getMinOrderSize(), 
-			    				clientOrderIdToEdit, 1.01* dataObject.getCurrentAsk().getPrice());
+			    		if (orderToModify != null){
+				    		//when I modify an order, the clientOrderId used will be the same however,
+				    		//we pass it on to the method in order to be able to log what we do.
+				    		placeOrderObject.modifyOrder(orderToModify, OrderDuration.DAY,
+				    				5 * dataObject.getCurrentInstrument().getMinOrderSize(), 
+				    				clientOrderIdToEdit, 1.01* dataObject.getCurrentAsk().getPrice());
+				    		
+							textPane.getDocument().insertString(textPane.getCaretPosition() , 
+									"Order is being modified \n\n" , null);		
+			    		}
 			    		
-						textPane.getDocument().insertString(textPane.getCaretPosition() , 
-								"Order is being modified \n\n" , null);		
+			    		else{
+			    			textPane.getDocument().insertString(textPane.getCaretPosition() , 
+									"Could not find order: " + clientOrderIdToEdit + ". Did you switch accounts?\n\n" , null);
+							
+			    		}
 						
 					}
 					
@@ -328,16 +340,26 @@ public class TradableStartNpModule extends JPanel implements WorkspaceModule, Ac
 							
 						}
 						
-						if (oCOPosition.getQuantity() > 0){
-							placeOrderObject.OCOOrder(oCOPosition, OrderSide.SELL, 0.98 * dataObject.getCurrentBid().getPrice(), 
-									1.02 * dataObject.getCurrentAsk().getPrice());
-						}
-						else{
-							placeOrderObject.OCOOrder(oCOPosition, OrderSide.SELL, 1.02 * dataObject.getCurrentBid().getPrice(), 
-									0.98 * dataObject.getCurrentAsk().getPrice());
+						if (oCOPosition != null){
+							
+							if (oCOPosition.getQuantity() > 0){
+								placeOrderObject.OCOOrder(oCOPosition, OrderSide.SELL, 0.98 * dataObject.getCurrentBid().getPrice(), 
+										1.02 * dataObject.getCurrentAsk().getPrice());
+							}
+							else{
+								placeOrderObject.OCOOrder(oCOPosition, OrderSide.SELL, 1.02 * dataObject.getCurrentBid().getPrice(), 
+										0.98 * dataObject.getCurrentAsk().getPrice());
+							}
 						}
 						
-						
+			    		else{
+			    			textPane.getDocument().insertString(textPane.getCaretPosition() , 
+									"Could not find any position for the instrument: " + 
+											dataObject.getCurrentInstrument().getSymbol() + 
+											". Did you close your related position?\n\n" , null);
+							
+			    		}
+
 						clickRound = 0;
 						this.btnNewButton.setText("Click Me " + String.valueOf(clickRound));
 						return;

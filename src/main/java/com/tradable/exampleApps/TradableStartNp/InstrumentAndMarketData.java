@@ -111,7 +111,7 @@ QuoteTickListener{
 	public void quotesUpdated(QuoteTickEvent event) {
 		
 		//Quote objects have to be updated in order to get the correct
-		//current prices. Not the subscription object is updated by the
+		//current prices. Note, the subscription object is updated by the
 		//container, thus the only way to update the Quote objects is to use it
 		this.setCurrentQuotes();
 
