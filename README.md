@@ -21,4 +21,4 @@ Furthermore, you can monitor the execution of your orders in the window right be
 
 
 If you want to get started with tradable Apps using this project as a base for your code, go check out the 
-REAMDE included in the tradable project to see how to open the project in Eclipse.
+README included in the tradable project to see how to open the project in Eclipse.
