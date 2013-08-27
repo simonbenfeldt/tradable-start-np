@@ -61,7 +61,7 @@ public class PlaceOrderClass implements TradingRequestListener{
 	//==================================================================================
 	
 	private Logger logger;
-	private int accountId;
+	private int accountId = 0;
 	
 	
 	public PlaceOrderClass(TradingRequestExecutor executor, Logger logger){
@@ -81,17 +81,28 @@ public class PlaceOrderClass implements TradingRequestListener{
 	
 	public void placeOrder(Instrument instrument, OrderSide orderSide, OrderDuration orderDuration, 
 			OrderType orderType, Double quantity, String clientOrderIdToSend){
-		placeOrder(instrument, orderSide, orderDuration, orderType, quantity, clientOrderIdToSend, 0.0);
+		placeOrder(instrument, orderSide, orderDuration, orderType, quantity, clientOrderIdToSend, 0.0, null);
 	}
 	
 	public void placeOrder(Instrument instrument, OrderSide orderSide, OrderDuration orderDuration, 
-			OrderType orderType, Double quantity, String clientOrderIdToSend, Double limit) {
+			OrderType orderType, Double quantity, String clientOrderIdToSend, String trackId){
+		placeOrder(instrument, orderSide, orderDuration, orderType, quantity, clientOrderIdToSend, 0.0, trackId);
+	}
+	
+	public void placeOrder(Instrument instrument, OrderSide orderSide, OrderDuration orderDuration, 
+			OrderType orderType, Double quantity, String clientOrderIdToSend, Double limit){
+		placeOrder(instrument, orderSide, orderDuration, orderType, quantity, clientOrderIdToSend, limit, null);
+	}
+	
+	public void placeOrder(Instrument instrument, OrderSide orderSide, OrderDuration orderDuration, 
+			OrderType orderType, Double quantity, String clientOrderIdToSend, Double limit, String trackId) {
 		
 		PlaceOrderActionBuilder orderActionBuilder = new PlaceOrderActionBuilder();
 		orderActionBuilder.setInstrument(instrument); // instrument object set in constructor
 		orderActionBuilder.setOrderSide(orderSide);
 		orderActionBuilder.setDuration(orderDuration);
 		orderActionBuilder.setOrderType(orderType); //so as to have it work or pend for a while
+		orderActionBuilder.setTrackId(trackId);
 		if(orderType == OrderType.LIMIT && limit > 0.0)
 			orderActionBuilder.setLimitPrice(limit);
 		else if(orderType == OrderType.LIMIT && limit == 0.0) //missing limit price. 
@@ -120,11 +131,7 @@ public class PlaceOrderClass implements TradingRequestListener{
 	}	
 	
 	
-	//==================================================================================//
-	//Beware when using the ModifyOrderAction classes, as they main contain bugs and thus 
-	//their behavior can be somewhat unexpected although it will seem to work most of the
-	//time when the market is open.
-	//==================================================================================//
+	
 	public void modifyOrder(Order orderToModify, OrderDuration orderDuration, Double quantity, 
 			String clientOrderIdToEdit, Double limitPrice){
 		
@@ -189,7 +196,7 @@ public class PlaceOrderClass implements TradingRequestListener{
 		for (OrderActionResult result : ((OrderActionResponse) response).getRejectedActions()){
 			if(!result.isSuccess()){
 				JOptionPane.showMessageDialog(null,
-						result.getCause().getMessage() + ", " + result.getCause().getCause().getMessage(),
+						"Unable to send order.\n" + result.getCause().getMessage() + ". " + result.getCause().getCause().getMessage(),
 						"Order error",
 						JOptionPane.ERROR_MESSAGE);
 				logger.error("Could not execute order: {}", request.getId(), result.getCause().getMessage() + ", " + result.getCause().getCause().getMessage());
