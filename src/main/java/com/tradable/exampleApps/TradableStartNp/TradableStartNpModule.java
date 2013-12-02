@@ -19,6 +19,7 @@ import java.util.Random;
 import java.lang.String;
 
 
+
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -29,6 +30,7 @@ import javax.swing.JButton;
 import javax.swing.text.BadLocationException;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
@@ -36,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 //====================================================================================
 //===================================================================================
+
 
 
 //========= (0) component API, has to be imported in any project==========//
@@ -118,7 +121,7 @@ public class TradableStartNpModule extends JPanel implements WorkspaceModule, Ac
 	final JTextField askTextField;
 
 	
-	static int clickRound;
+	int clickRound;
 	
 	public TradableStartNpModule(TradingRequestExecutor executor, 
 			CurrentAccountService accountSubscriptionService, 
@@ -129,7 +132,7 @@ public class TradableStartNpModule extends JPanel implements WorkspaceModule, Ac
 		//============= This code sets up the visual component of our Module==============//
 		//====================================================================================	
 		setLayout(null);
-		setSize(400, 400);	
+		setPreferredSize(new Dimension(400, 400));	
 		setBackground(Color.DARK_GRAY);
 		putClientProperty(WorkspaceModuleProperties.COMPONENT_TITLE, TITLE);
 		putClientProperty(WorkspaceModuleProperties.COMPONENT_RESIZE_ENABLED, false);
@@ -226,7 +229,7 @@ public class TradableStartNpModule extends JPanel implements WorkspaceModule, Ac
 	//The user changes it to a limit order for 5 * minimum order size of instrument that should be filled instantly as the set limit 
     //is slightly higher than the latest observed ask price. 
 	//5) We show how to protect position using the OCOGroupRequestBuilder. We arbitrarily 
-	//select a position in the same instrument we used to protect it by placing a protectin
+	//select a position in the same instrument we used to protect it by placing a protection
 	//limit order and a take profit.
 	//When clicked again, go to 1).
 	//====================================================================================	
@@ -276,10 +279,11 @@ public class TradableStartNpModule extends JPanel implements WorkspaceModule, Ac
 									"because prices aren't being updated fast enough!\n\n" + 
 									"Click again to get prices for another symbol\n\n" , null);
 							
-							e.printStackTrace();
+							logger.error("Failed to set Instrument: {}", 
+									dataObject.getCurrentInstrument().getSymbol(), e);
 							clickRound = 0;
 							this.btnNewButton.setText("Click Me " + String.valueOf(clickRound));
-							return; //cdon't send any order.
+							return; //don't send any order.
 						}
 						
 						
